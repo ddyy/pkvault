@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Passkey-encrypted .env files for teams.",
   "bin": {
-    "pkvault": "./cli.js"
+    "pkvault": "cli.js"
   },
   "files": [
     "cli.js",
@@ -20,7 +20,10 @@
   },
   "license": "MIT",
   "author": "Daniel Yang <dev@daniel-yang.com>",
-  "repository": "github:ddyy/pkvault",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ddyy/pkvault.git"
+  },
   "homepage": "https://pkvault.dev",
   "keywords": [
     "env",
