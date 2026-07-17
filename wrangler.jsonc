@@ -1,0 +1,12 @@
+{
+  // Hosted ceremony page (PLAN §9 gate 1): a single static file, no backend,
+  // nothing stateful. web/index.html is the same file the CLI serves locally.
+  "name": "pkvault-unlock",
+  "compatibility_date": "2026-07-01",
+  "assets": {
+    "directory": "./web"
+  },
+  "routes": [
+    { "pattern": "unlock.pkvault.dev", "custom_domain": true }
+  ]
+}

@@ -1,0 +1,220 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pkvault — unlock</title>
+<!--
+  pkvault ceremony page. Single self-contained file, ZERO external resources
+  (no fonts, images, or network calls) — that isolation is a security property,
+  enforced by the CSP default-src 'none'. System fonts + inline SVG only.
+-->
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #ffffff; --ink: #1a1c25; --muted: #5b6070;
+    --line: #e6e8f0; --accent: #4f46e5; --accent-ink: #ffffff;
+    --ok: #0a7d43; --err: #c0362c; --shadow: 0 1px 2px rgba(20,22,40,.06), 0 12px 32px rgba(20,22,40,.10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d0f16; --card: #161923; --ink: #eceef5; --muted: #9aa0b4;
+      --line: #262a38; --accent: #7c7bff; --accent-ink: #0d0f16;
+      --ok: #4ade80; --err: #ff7a70; --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 40px rgba(0,0,0,.5);
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; } /* element display rules must not override the hidden attr */
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+    display: grid; place-items: center; padding: 1.5rem;
+  }
+  .card {
+    width: 100%; max-width: 25rem; background: var(--card);
+    border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
+    padding: 2rem 1.75rem 1.5rem; text-align: center;
+  }
+  .mark {
+    display: inline-flex; align-items: center; gap: .5rem; margin-bottom: 1.5rem;
+    font-weight: 650; letter-spacing: -.01em; color: var(--ink); font-size: 1.05rem;
+  }
+  .mark svg { width: 26px; height: 26px; display: block; }
+  h1 { font-size: 1.35rem; line-height: 1.25; margin: 0 0 .5rem; letter-spacing: -.02em; }
+  #desc { color: var(--muted); margin: 0 auto 1.5rem; max-width: 22rem; font-size: .95rem; }
+  button {
+    appearance: none; border: 0; width: 100%; cursor: pointer;
+    font: 600 1rem/1 inherit; color: var(--accent-ink); background: var(--accent);
+    padding: .85rem 1.25rem; border-radius: 10px; transition: filter .15s, transform .05s;
+    display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+  }
+  button:hover { filter: brightness(1.07); }
+  button:active { transform: translateY(1px); }
+  button:disabled { cursor: default; filter: none; opacity: .85; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: .55; } 50% { opacity: .9; } }
+  button svg { width: 18px; height: 18px; }
+  #msg {
+    margin: 1rem auto 0; min-height: 1.2rem; font-size: .9rem; color: var(--muted);
+    white-space: pre-wrap; max-width: 22rem;
+  }
+  #msg.err { color: var(--err); }
+  .trust {
+    margin-top: 1.5rem; padding-top: 1.15rem; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: .8rem; display: grid; gap: .5rem; text-align: left;
+  }
+  .trust .row { display: flex; align-items: flex-start; gap: .5rem; }
+  .trust svg { width: 15px; height: 15px; margin-top: .1rem; flex: none; color: var(--ok); }
+  .origin {
+    margin-top: 1rem; font: .78rem/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--muted);
+  }
+  .origin b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="card">
+  <div class="mark" aria-hidden="true">
+    <!-- inline vault/shield mark -->
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2 4 5v6c0 4.5 3.1 7.6 8 9 4.9-1.4 8-4.5 8-9V5l-8-3Z"/>
+      <circle cx="12" cy="11" r="2.2"/>
+      <path d="M12 13.2V16"/>
+    </svg>
+    <span>pkvault</span>
+  </div>
+
+  <h1 id="title">Confirm with your passkey</h1>
+  <p id="desc"></p>
+  <button id="go">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/><rect x="4" y="11" width="16" height="10" rx="2"/>
+    </svg>
+    <span>Continue with passkey</span>
+  </button>
+  <div id="msg" role="status" aria-live="polite"></div>
+
+  <div class="trust">
+    <div class="row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>
+      <span>Your secrets never leave your device. Only public key material is used here.</span>
+    </div>
+    <div class="row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>
+      <span>No server sees this — the result returns straight to your local pkvault.</span>
+    </div>
+    <div class="origin">you are on <b id="origin">this device</b></div>
+  </div>
+</div>
+
+<script>
+// pkvault ceremony page v1. Static and self-contained: deployed at the hosted
+// or self-hosted RP, with a localhost mode for development. All
+// parameters arrive in the URL FRAGMENT (never sent to any server); the PRF
+// output leaves ONLY encrypted to the CLI's ephemeral P-256 key, delivered by
+// top-level navigation (SPEC §4.5: redirect-based, no fetch, no popups).
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.hash.slice(1));
+  const op = params.get("op"); // "setup" | "unlock"
+  const code = params.get("code");
+  const cliPub = params.get("clipub"); // b64url, 65-byte uncompressed P-256 point
+  const salt = params.get("salt"); // b64url, 32-byte PRF salt
+  const credId = params.get("credid"); // b64url (unlock only)
+  const port = params.get("port"); // present → callback on 127.0.0.1:<port>, else same-origin
+
+  const fail = (m) => { $("msg").className = "err"; $("msg").textContent = m; };
+  const unb64u = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+  const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+  try { $("origin").textContent = location.host || "this device"; } catch {}
+
+  if (!op || !code || !cliPub || !salt || (op === "unlock" && !credId)) {
+    $("go").hidden = true;
+    $("title").textContent = "Start from the CLI";
+    return fail("Missing ceremony parameters — open this page by running a pkvault command in your terminal.");
+  }
+  $("title").textContent = op === "setup" ? "Create your identity" : "Unlock pkvault";
+  $("desc").textContent = op === "setup"
+    ? "Create the passkey that protects your pkvault identity. One biometric confirmation — Face ID, Touch ID, or your security key."
+    : "Unlock your pkvault identity to continue. One biometric confirmation.";
+
+  async function prfViaCreate() {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: "pkvault" },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: "pkvault", displayName: "pkvault" },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+        authenticatorSelection: { residentKey: "preferred", userVerification: "required" },
+        extensions: { prf: { eval: { first: unb64u(salt) } } },
+      },
+    });
+    const ext = cred.getClientExtensionResults();
+    if (ext.prf?.enabled === false)
+      throw new Error("This passkey provider does not support the PRF extension (Bitwarden and Chrome-profile passkeys are known failures). Re-run and choose Apple Passwords / iCloud Keychain, Google Password Manager, or 1Password in the dialog.");
+    let first = ext.prf?.results?.first;
+    if (!first) first = await prfViaGet(cred.rawId); // some providers only serve PRF on get()
+    return { prf: first, credentialId: cred.rawId };
+  }
+
+  async function prfViaGet(rawId) {
+    const cred = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type: "public-key", id: rawId }],
+        userVerification: "required",
+        extensions: { prf: { eval: { first: unb64u(salt) } } },
+      },
+    });
+    const first = cred.getClientExtensionResults().prf?.results?.first;
+    if (!first) throw new Error("assertion returned no PRF output");
+    return first;
+  }
+
+  // Encrypt {prf, credentialId, rpId} to the CLI's ephemeral key:
+  // ECDH(P-256) → HKDF-SHA-256(salt=code, info="pkvault/bridge/v1") → AES-256-GCM(aad=code).
+  async function sealForCli(obj) {
+    const cliKey = await crypto.subtle.importKey("raw", unb64u(cliPub), { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const eph = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, false, ["deriveBits"]);
+    const shared = await crypto.subtle.deriveBits({ name: "ECDH", public: cliKey }, eph.privateKey, 256);
+    const hk = await crypto.subtle.importKey("raw", shared, "HKDF", false, ["deriveKey"]);
+    const key = await crypto.subtle.deriveKey(
+      { name: "HKDF", hash: "SHA-256", salt: new TextEncoder().encode(code), info: new TextEncoder().encode("pkvault/bridge/v1") },
+      hk, { name: "AES-GCM", length: 256 }, false, ["encrypt"]
+    );
+    const nonce = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: nonce, additionalData: new TextEncoder().encode(code) },
+      key, new TextEncoder().encode(JSON.stringify(obj))
+    );
+    const ephRaw = await crypto.subtle.exportKey("raw", eph.publicKey); // 65 bytes
+    const out = new Uint8Array(65 + 12 + ct.byteLength);
+    out.set(new Uint8Array(ephRaw), 0);
+    out.set(nonce, 65);
+    out.set(new Uint8Array(ct), 77);
+    return b64u(out);
+  }
+
+  $("go").onclick = async () => {
+    $("go").disabled = true;
+    $("msg").className = "";
+    $("msg").textContent = "Waiting for your authenticator…";
+    try {
+      let prf, credentialId;
+      if (op === "setup") ({ prf, credentialId } = await prfViaCreate());
+      else { credentialId = unb64u(credId).buffer; prf = await prfViaGet(credentialId); }
+      $("msg").textContent = "Confirmed — returning to your terminal…";
+      const payload = await sealForCli({
+        prf: b64u(prf),
+        credentialId: b64u(credentialId),
+        rpId: location.hostname,
+      });
+      const base = port ? `http://127.0.0.1:${port}` : "";
+      // top-level navigation; the payload is ciphertext to a single-use key —
+      // useless in history the moment the CLI discards its ephemeral secret.
+      location.href = `${base}/callback?code=${code}&payload=${payload}`;
+    } catch (e) {
+      $("go").disabled = false;
+      fail(`${e.message || e}\n\nNothing left this page except the request above. You can retry.`);
+    }
+  };
+})();
+</script>

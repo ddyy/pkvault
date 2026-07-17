@@ -1,0 +1,10 @@
+node_modules
+playground
+*.tgz
+.pkvault/
+.env
+*.pkvault
+*.wrap
+.wrangler/
+.dev.vars
+.dev.vars.*

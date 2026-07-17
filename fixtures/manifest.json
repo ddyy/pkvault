@@ -1,0 +1,379 @@
+{
+  "identities": {
+    "A": {
+      "scalar": "8bd686e6939d7b6882e14b209fda7ccb6d869f2b6e7770cd5c789dcde0265f99",
+      "recipient": "age15y6llyd39rhl5042ttt2kfw92k8x4kzxe6xjmulvxwwzgff9ny0qxw0wja"
+    },
+    "B": {
+      "scalar": "89da3309d93748fb5f38c3fe502046762304b9e33992e8570471c916986de820",
+      "recipient": "age15uyshykyvkgte3qv2j0k2ntqf5mvlplpp2tu9d9y4plvpz8aqaqqykw2hl"
+    },
+    "R": {
+      "scalar": "59964ca8b4630a7b6db71290d72bedf0fe51993c3f53ab65b9162b2c9b832fa0",
+      "recipient": "age1ewxdzqyj52s46par9utu6xmpncrnjgsnyuld7v0kr7nezd9v7gvqxvxunu"
+    }
+  },
+  "fixtures": [
+    {
+      "file": "w1-roundtrip.env",
+      "id": "W1",
+      "op": "roundtrip",
+      "identity": "A",
+      "expect": {
+        "values": {
+          "DATABASE_URL": "postgres://app:hunter2@db.example.com:5432/prod",
+          "API_HOST": "api.example.com",
+          "JWT_SECRET": "jwt-secret-0123456789abcdef"
+        }
+      }
+    },
+    {
+      "file": "w2-add-recipient.env",
+      "id": "W2",
+      "op": "diff-shape",
+      "identity": "R",
+      "against": "w1-roundtrip.env",
+      "expect": {
+        "bodyStable": true,
+        "newUnseals": true
+      }
+    },
+    {
+      "file": "w3-multiline.env",
+      "id": "W3",
+      "op": "get",
+      "identity": "A",
+      "name": "PRIVATE_KEY",
+      "expect": {
+        "value": "-----BEGIN KEY-----\nabc\ndef\n-----END KEY-----"
+      }
+    },
+    {
+      "file": "n1-aad-name-swap.env",
+      "id": "N1",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_GCM"
+      }
+    },
+    {
+      "file": "n2-aad-file-swap.env",
+      "id": "N2",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_GCM"
+      }
+    },
+    {
+      "file": "n3-rotate.env",
+      "id": "N3",
+      "op": "unseal",
+      "identity": "B",
+      "expect": {
+        "error": "E_UNSEAL"
+      }
+    },
+    {
+      "file": "n3b-anomalous-remove.env",
+      "id": "N3b",
+      "op": "analyze",
+      "identity": "A",
+      "against": "w1-roundtrip.env",
+      "expect": {
+        "anomalousRemove": true
+      }
+    },
+    {
+      "file": "n4-bad-tag.env",
+      "id": "N4",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_GCM"
+      }
+    },
+    {
+      "file": "n5-mac-plaintext-tamper.env",
+      "id": "N5",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_MAC"
+      }
+    },
+    {
+      "file": "n6-mac-recipient-tamper.env",
+      "id": "N6",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_MAC"
+      }
+    },
+    {
+      "file": "n7-duplicate-name.env",
+      "id": "N7",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_NAME_DUP"
+      }
+    },
+    {
+      "file": "n8a-missing-field.env",
+      "id": "N8",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_TOKEN"
+      }
+    },
+    {
+      "file": "n8b-short-nonce.env",
+      "id": "N8",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_TOKEN"
+      }
+    },
+    {
+      "file": "n8c-short-ct.env",
+      "id": "N8",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_TOKEN"
+      }
+    },
+    {
+      "file": "n8d-zero-version.env",
+      "id": "N8",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_TOKEN"
+      }
+    },
+    {
+      "file": "n8e-leading-zero.env",
+      "id": "N8",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_TOKEN"
+      }
+    },
+    {
+      "file": "n9-future-version.env",
+      "id": "N9",
+      "op": "future-version",
+      "identity": "A",
+      "knownName": "DATABASE_URL",
+      "knownValue": "postgres://app:hunter2@db.example.com:5432/prod",
+      "expect": {
+        "error": "E_VALUE_VERSION_UNKNOWN"
+      }
+    },
+    {
+      "file": "n10a-crlf.env",
+      "id": "N10",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_CRLF"
+      }
+    },
+    {
+      "file": "n10b-no-final-lf.env",
+      "id": "N10",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_FINAL_LF"
+      }
+    },
+    {
+      "file": "n11a-missing-directive.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_HEADER"
+      }
+    },
+    {
+      "file": "n11b-reordered.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_HEADER"
+      }
+    },
+    {
+      "file": "n11c-unknown-directive.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_HEADER"
+      }
+    },
+    {
+      "file": "n11d-missing-separator.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_HEADER"
+      }
+    },
+    {
+      "file": "n11e-body-directive.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_BODY"
+      }
+    },
+    {
+      "file": "n11f-zero-recipients.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_RECIPIENTS"
+      }
+    },
+    {
+      "file": "n11g-mixed-case-recipient.env",
+      "id": "N11",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_RECIPIENTS"
+      }
+    },
+    {
+      "file": "n12-bad-base64.env",
+      "id": "N12",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_BASE64"
+      }
+    },
+    {
+      "file": "n13-unmarked-plaintext.env",
+      "id": "N13",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_UNMARKED"
+      }
+    },
+    {
+      "file": "n14-unknown-major.env",
+      "id": "N14",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_VERSION_UNKNOWN"
+      }
+    },
+    {
+      "file": "n15-duplicate-recipient-key.env",
+      "id": "N15",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_RECIPIENTS"
+      }
+    },
+    {
+      "file": "n16a-not-age.env",
+      "id": "N16",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_ENVELOPE"
+      }
+    },
+    {
+      "file": "n16b-armored.env",
+      "id": "N16",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_ENVELOPE"
+      }
+    },
+    {
+      "file": "n16c-foreign-stanza.env",
+      "id": "N16",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_ENVELOPE"
+      }
+    },
+    {
+      "file": "n16d-count-mismatch.env",
+      "id": "N16",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_ENVELOPE"
+      }
+    },
+    {
+      "file": "n16e-payload-length.env",
+      "id": "N16",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_ENVELOPE"
+      }
+    },
+    {
+      "file": "n16f-bad-plaintext.env",
+      "id": "N16",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PLAINTEXT_DOMAIN"
+      }
+    },
+    {
+      "file": "n17a-unsorted-preamble.env",
+      "id": "N17",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_PREAMBLE"
+      }
+    },
+    {
+      "file": "n17b-late-annotation.env",
+      "id": "N17",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_PREAMBLE"
+      }
+    },
+    {
+      "file": "n18-case-fold.env",
+      "id": "N18",
+      "op": "open",
+      "identity": "A",
+      "expect": {
+        "error": "E_PARSE_NAME_DUP"
+      }
+    }
+  ]
+}
